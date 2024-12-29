@@ -1,0 +1,109 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-5">
+	<div class="card mx-auto shadow" style="max-width: 400px">
+		<div class="card-header bg-primary text-white">
+			<h2 class="text-center my-2">Đăng Nhập</h2>
+		</div>
+		<div class="card-body">
+			<form method="POST">
+				<!-- Tên đăng nhập -->
+				<div class="mb-3">
+					<label for="username" class="form-label">Tên đăng nhập</label>
+					<input
+						type="text"
+						class="form-control"
+						id="username"
+						name="username"
+						placeholder="Nhập tên đăng nhập"
+						required
+					/>
+				</div>
+				<!-- Mật khẩu -->
+				<div class="mb-3">
+					<label for="password" class="form-label">Mật khẩu</label>
+					<input
+						type="password"
+						class="form-control"
+						id="password"
+						name="password"
+						placeholder="Nhập mật khẩu"
+						required
+					/>
+				</div>
+				<!-- Nút đăng nhập -->
+				<button type="submit" class="btn btn-primary w-100">Đăng Nhập</button>
+			</form>
+		</div>
+	</div>
+
+	<!-- Snackbar cho thông báo lỗi -->
+	<div id="snackbar" style="display: none">
+		Thông tin tài khoản không chính xác!
+	</div>
+</div>
+
+<!-- Thêm CSS cho snackbar -->
+<style>
+	#snackbar {
+		visibility: hidden;
+		min-width: 250px;
+		margin-left: -125px;
+		background-color: #f44336;
+		color: #fff;
+		text-align: center;
+		border-radius: 2px;
+		padding: 16px;
+		position: fixed;
+		z-index: 1;
+		left: 50%;
+		bottom: 30px;
+		font-size: 17px;
+	}
+
+	#snackbar.show {
+		visibility: visible;
+		animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	}
+
+	@keyframes fadein {
+		from {
+			bottom: 0;
+			opacity: 0;
+		}
+		to {
+			bottom: 30px;
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeout {
+		from {
+			bottom: 30px;
+			opacity: 1;
+		}
+		to {
+			bottom: 0;
+			opacity: 0;
+		}
+	}
+</style>
+
+<!-- Thêm JavaScript để hiển thị snackbar -->
+<script>
+	function showSnackbar() {
+		var snackbar = document.getElementById("snackbar");
+		snackbar.className = "show";
+		snackbar.style.display = "block";
+		setTimeout(function () {
+			snackbar.className = "";
+			snackbar.style.display = "none";
+		}, 3000);
+	}
+	// check error if exists
+
+	{% if error %}
+		showSnackbar();
+	{% endif %}
+</script>
+
+{% endblock %}

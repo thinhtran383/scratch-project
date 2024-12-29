@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parking System Logs</title>
+    <!-- Sử dụng Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        h1 {
+            color: #343a40;
+        }
+        .table img {
+            border-radius: 5px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        }
+        .container {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: white;
+            border-radius: 10px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+        .refresh-btn {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    {% extends "base.html" %}
+    {% block content %}
+    <div class="container mt-5">
+        <h1 class="text-center mb-4">Parking System Logs</h1>
+        <div class="refresh-btn">
+            <button class="btn btn-primary" onclick="fetchLogs()">Làm mới dữ liệu</button>
+        </div>
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr class="text-center">
+                    <th>ID</th>
+                    <th>RFID</th>
+                    <th>Biển số xe</th>
+                    <th>Hình ảnh vào</th>
+                    <th>Hình ảnh lái xe</th>
+                    <th>Thời gian vào</th>
+                    <th>Thời gian ra</th>
+                    <th>Trạng thái thanh toán</th>
+                </tr>
+            </thead>
+            <tbody id="logs-table">
+                {% for log in logs %}
+                <tr class="text-center align-middle">
+                    <td>{{ log.id }}</td>
+                    <td>{{ log.rfid }}</td>
+                    <td>{{ log.license_plate }}</td>
+                    <td>
+                        <img src="data:image/jpeg;base64,{{ log.entry_image | b64encode }}" alt="Entry Image" class="img-thumbnail" width="100">
+                    </td>
+                    <td>
+                        <img src="data:image/jpeg;base64,{{ log.driver_image | b64encode }}" alt="Driver Image" class="img-thumbnail" width="100">
+                    </td>
+                    <td>{{ log.entry_time }}</td>
+                    <td>{{ log.exit_time }}</td>
+                    <td>
+                        {% if log.payment_status == 'Paid' %}
+                            <span class="badge bg-success">Đã thanh toán</span>
+                        {% else %}
+                            <span class="badge bg-warning text-dark">Chưa thanh toán</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endblock %}
+
+    <!-- JavaScript để tự động làm mới dữ liệu -->
+    <script>
+        function fetchLogs() {
+            fetch('/api/logs')
+                .then(response => response.json())
+                .then(data => {
+                    let logsTable = document.getElementById('logs-table');
+                    logsTable.innerHTML = '';  // Xóa dữ liệu cũ
+                    data.forEach(log => {
+                        let row = `<tr class="text-center align-middle">
+                                       <td>${log.id}</td>
+                                       <td>${log.rfid}</td>
+                                       <td>${log.license_plate}</td>
+                                       <td><img src="data:image/jpeg;base64,${log.entry_image}" alt="Entry Image" class="img-thumbnail" width="100"></td>
+                                       <td><img src="data:image/jpeg;base64,${log.driver_image}" alt="Driver Image" class="img-thumbnail" width="100"></td>
+                                       <td>${log.entry_time}</td>
+                                       <td>${log.exit_time}</td>
+                                       <td><span class="badge ${log.payment_status === 'Paid' ? 'bg-success' : 'bg-warning text-dark'}">
+                                           ${log.payment_status === 'Paid' ? 'Đã thanh toán' : 'Chưa thanh toán'}</span></td>
+                                   </tr>`;
+                        logsTable.innerHTML += row;
+                    });
+                })
+                .catch(error => console.log('Lỗi khi tải dữ liệu logs:', error));
+        }
+
+        // Tự động làm mới dữ liệu mỗi 5 giây
+        setInterval(fetchLogs, 5000);
+        fetchLogs();  // Gọi lần đầu tiên khi trang được tải
+    </script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

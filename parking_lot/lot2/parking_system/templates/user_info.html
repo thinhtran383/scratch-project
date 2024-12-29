@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container mt-5">
+    <div class="card mx-auto shadow" style="max-width: 400px;">
+        <div class="card-header bg-info text-white">
+            <h2 class="text-center my-2">Thông Tin Người Dùng</h2>
+        </div>
+        <div class="card-body">
+            <ul class="list-group list-group-flush">
+                <!-- Hiển thị tên đăng nhập -->
+                <li class="list-group-item">
+                    <strong>Tên đăng nhập:</strong> {{ user['name'] }}
+                </li>
+                <!-- Hiển thị RFID -->
+                <li class="list-group-item">
+                    <strong>RFID:</strong> {{ user['rfid'] }}
+                </li>
+            </ul>
+            <!-- Nút thay đổi mật khẩu -->
+            <a href="{{ url_for('change_password') }}" class="btn btn-primary w-100 mt-3">Thay Đổi Mật Khẩu</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

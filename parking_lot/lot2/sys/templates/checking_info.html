@@ -1,0 +1,414 @@
+{% extends "base.html" %} {% block content %}
+<div class="container mt-4">
+	<h2>Thông Tin Kiểm Tra</h2>
+	<div class="statistics mt-3">
+		<div class="row">
+			<div class="col">
+				<div class="stat-box">
+					<h5>Số xe trong bãi:</h5>
+					<p id="carsInParking">...</p>
+				</div>
+			</div>
+			<div class="col">
+				<div class="stat-box">
+					<h5>Số sỗ còn lại:</h5>
+					<p id="carsTotalParking">...</p>
+				</div>
+			</div>
+			<div class="col">
+				<div class="stat-box">
+					<h5>Lượt ra vào trong ngày:</h5>
+					<p id="todayCheckings">...</p>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Thêm ô tìm kiếm -->
+	<div class="mb-3">
+		<label for="licensePlateSearch" class="form-label">Nhập biển số xe:</label>
+		<input
+			type="text"
+			id="licensePlateSearch"
+			class="form-control"
+			placeholder="Nhập biển số xe"
+		/>
+	</div>
+
+	<!-- Thêm datepicker cho tìm kiếm theo ngày -->
+	<div class="mb-3">
+		<label for="dateSearch" class="form-label">Chọn ngày:</label>
+		<input type="date" id="dateSearch" class="form-control" />
+	</div>
+
+	<!-- Thêm combobox để lọc xe vào/xe ra -->
+	<div class="mb-3">
+		<label for="filterSelect" class="form-label">Lọc theo:</label>
+		<select id="filterSelect" class="form-select">
+			<option value="">Tất cả</option>
+			<option value="in">Xe trong bãi</option>
+			<option value="out">Xe ngoài bãi</option>
+		</select>
+	</div>
+	<button id="searchButton" class="btn btn-primary mt-2">Tìm kiếm</button>
+	<button id="restButton" class="btn btn-primary mt-2">Làm mới</button>
+
+	<div class="mt-4">
+		<button id="openGateButton" class="btn btn-success">Mở Cổng</button>
+		<button id="closeGateButton" class="btn btn-danger">Đóng Cổng</button>
+	</div>
+
+	<div class="table-responsive">
+		<table class="table table-striped mt-3" id="checkings-table">
+			<thead>
+				<tr>
+					<th>ID</th>
+					<th>Mã Thẻ RFID</th>
+					<th>Biển Số Xe</th>
+					<th>Thời Gian Vào</th>
+					<th>Thời Gian Ra</th>
+					<th>Đường Dẫn Ảnh</th>
+				</tr>
+			</thead>
+			<tbody>
+				{% for checking in checkings %}
+				<tr>
+					<td>{{ checking.id }}</td>
+					<td>{{ checking.rfid_code or "None"}}</td>
+					<td>{{ checking.license_plate }}</td>
+					<td>{{ checking.check_in_time }}</td>
+					<td>{{ checking.check_out_time or 'Chưa ra' }}</td>
+					<td>
+						{% if checking.image_path %}
+						<a
+							href="{{ url_for('static', filename='images/' + checking.image_path) }}"
+							target="_blank"
+						>
+							Xem Ảnh
+						</a>
+						{% else %} Không có ảnh {% endif %}
+					</td>
+				</tr>
+				{% endfor %}
+			</tbody>
+		</table>
+	</div>
+</div>
+
+<!-- Snackbar -->
+<div id="snackbar"></div>
+
+<script src="https://cdn.socket.io/4.0.0/socket.io.min.js"></script>
+<script src="https://cdn.datatables.net/1.13.1/js/jquery.dataTables.min.js"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+	const socket = io.connect("http://" + document.domain + ":" + location.port);
+
+	socket.on("error", function (data) {
+		showSnackbar(data.license_plate, "error");
+	});
+
+	function reloadTable() {
+		$.ajax({
+			url: "/checkings",
+			method: "GET",
+			success: function (data) {
+				const tableBody = $("#checkings-table tbody");
+				tableBody.empty(); // Xóa các hàng hiện tại
+
+				data.forEach(function (checking) {
+					const row = `
+                        <tr>
+                            <td>${checking.id}</td>
+                            <td>${checking.rfid_code || "None"}</td>
+                            <td>${checking.license_plate}</td>
+                            <td>${checking.check_in_time}</td>
+                            <td>${checking.check_out_time || "Chưa ra"}</td>
+                            <td>
+                                ${
+																	checking.image_path
+																		? `<a href="/static/images/${checking.image_path}" target="_blank">Xem Ảnh</a>`
+																		: "Không có ảnh"
+																}
+                            </td>
+                        </tr>
+                    `;
+					tableBody.append(row);
+				});
+
+				$("#checkings-table").DataTable().destroy(); // Hủy DataTable cũ
+				$("#checkings-table").DataTable(); // Khởi tạo DataTable mới
+			},
+			error: function (xhr) {
+				console.error("Failed to load checkings:", xhr);
+			},
+		});
+	}
+
+	// Lắng nghe sự kiện khi xe vào bãi thành công
+	socket.on("car_in_success", function (data) {
+		loadStatistics();
+		reloadTable();
+		updateTotalCarsInParking(true);
+		showSnackbar("Xe đã vào bãi thành công: " + data.license_plate, "success");
+	});
+
+	socket.on("car_out_success", function (data) {
+		loadStatistics();
+		reloadTable();
+		updateTotalCarsInParking(false);
+		showSnackbar(
+			"Xe đã ra khỏi bãi thành công: " + data.license_plate,
+			"success"
+		);
+	});
+
+	function showSnackbar(message, type) {
+		const snackbar = document.getElementById("snackbar");
+		snackbar.textContent = message;
+
+		if (type === "success") {
+			snackbar.style.backgroundColor = "#4CAF50";
+		} else if (type === "error") {
+			snackbar.style.backgroundColor = "#f44336";
+		}
+
+		snackbar.className = "show";
+		setTimeout(() => {
+			snackbar.className = snackbar.className.replace("show", "");
+		}, 3000);
+	}
+
+	$("#restButton").click(function () {
+		$("#licensePlateSearch").val("");
+		$("#dateSearch").val("");
+		$("#filterSelect").val("");
+		reloadTable();
+	});
+
+	$("#searchButton").click(function () {
+		const licensePlate = $("#licensePlateSearch").val();
+		const searchDate = $("#dateSearch").val();
+		const filter = $("#filterSelect").val();
+
+		// Chuyển đổi định dạng ngày từ dd-mm-yyyy sang yyyy-mm-dd
+		let formattedDate = "";
+		if (searchDate) {
+			const parts = searchDate.split("-");
+			if (parts.length === 3) {
+				formattedDate = `${parts[2]}-${parts[1]}-${parts[0]}`; // Chuyển đổi sang yyyy-mm-dd
+			} else {
+				showSnackbar("Invalid date format, please use dd-mm-yyyy.", "error");
+				return;
+			}
+		}
+		const data = {
+			license_plate: licensePlate,
+			date: formattedDate,
+			filter: filter,
+		};
+
+		$.ajax({
+			url: "/search",
+			method: "GET",
+			data: data,
+			success: function (data) {
+				const tableBody = $("#checkings-table tbody");
+				tableBody.empty(); // Xóa các hàng hiện tại
+
+				// Thêm các bản ghi mới vào bảng
+				data.forEach(function (checking) {
+					const row = `
+                    <tr>
+                        <td>${checking.id}</td>
+                        <td>${checking.rfid_code || "None"}</td>
+                        <td>${checking.license_plate}</td>
+                        <td>${checking.check_in_time}</td>
+                        <td>${checking.check_out_time || "Chưa ra"}</td>
+                        <td>
+                            ${
+															checking.image_path
+																? `<a href="/static/images/${checking.image_path}" target="_blank">Xem Ảnh</a>`
+																: "Không có ảnh"
+														}
+                        </td>
+                    </tr>
+                `;
+					tableBody.append(row);
+				});
+
+				$("#checkings-table").DataTable().destroy(); // Hủy DataTable cũ
+				$("#checkings-table").DataTable(); // Khởi tạo DataTable mới
+			},
+			error: function (xhr) {
+				console.error("Failed to load search results:", xhr);
+			},
+		});
+	});
+
+	// Tìm kiếm theo ngày
+	$("#dateSearchButton").click(function () {
+		const date = $("#dateSearch").val();
+		if (date) {
+			$.ajax({
+				url: "/search_by_date",
+				method: "GET",
+				data: { date: date },
+				success: function (data) {
+					const tableBody = $("#checkings-table tbody");
+					tableBody.empty();
+
+					data.forEach(function (checking) {
+						const row = `
+                            <tr>
+                                <td>${checking.id}</td>
+                                <td>${checking.rfid_code}</td>
+                                <td>${checking.license_plate}</td>
+                                <td>${checking.check_in_time}</td>
+                                <td>${checking.check_out_time || "Chưa ra"}</td>
+                                <td>
+                                    ${
+																			checking.image_path
+																				? `<a href="/static/images/${checking.image_path}" target="_blank">Xem Ảnh</a>`
+																				: "Không có ảnh"
+																		}
+                                </td>
+                            </tr>
+                        `;
+						tableBody.append(row);
+					});
+
+					$("#checkings-table").DataTable().destroy(); // Hủy DataTable cũ
+					$("#checkings-table").DataTable(); // Khởi tạo DataTable mới
+				},
+				error: function (xhr) {
+					console.error("Failed to load search results:", xhr);
+				},
+			});
+		}
+	});
+
+	$(document).ready(function () {
+		$("#checkings-table").DataTable();
+	});
+
+	// Gửi lệnh mở cổng qua Flask
+	document
+		.getElementById("openGateButton")
+		.addEventListener("click", function () {
+			$.ajax({
+				url: "/gate/open",
+				type: "POST",
+				success: function (response) {
+					showSnackbar("Đã gửi lệnh mở cổng", "success");
+				},
+				error: function () {
+					showSnackbar("Không thể gửi lệnh mở cổng", "error");
+				},
+			});
+		});
+
+	// Gửi lệnh đóng cổng qua Flask
+	document
+		.getElementById("closeGateButton")
+		.addEventListener("click", function () {
+			$.ajax({
+				url: "/gate/close",
+				type: "POST",
+				success: function (response) {
+					showSnackbar("Đã gửi lệnh đóng cổng", "success");
+				},
+				error: function () {
+					showSnackbar("Không thể gửi lệnh đóng cổng", "error");
+				},
+			});
+		});
+
+	if (!localStorage.getItem("totalCarsInParking")) {
+		localStorage.setItem("totalCarsInParking", 1000);
+	}
+
+	// Hàm cập nhật số xe trong bãi khi có xe vào hoặc ra
+	function updateTotalCarsInParking(isCarIn) {
+		let totalCars = parseInt(localStorage.getItem("totalCarsInParking"));
+		totalCars += isCarIn ? -1 : 1; // Nếu là vào thì trừ đi, ra thì cộng vào
+		localStorage.setItem("totalCarsInParking", totalCars);
+
+		// Cập nhật hiển thị thống kê
+		$("#carsTotalParking").text(totalCars);
+	}
+	// Hàm tải thống kê
+	function loadStatistics() {
+		$.ajax({
+			url: "/statistics",
+			method: "GET",
+			success: function (data) {
+				$("#carsInParking").text(data.cars_in_parking);
+				$("#carsTotalParking").text(
+					localStorage.getItem("totalCarsInParking") || 1000
+				);
+				$("#todayCheckings").text(data.today_checkings);
+			},
+			error: function () {
+				console.error("Không thể tải dữ liệu thống kê.");
+			},
+		});
+	}
+
+	// Tải thống kê khi trang được tải
+	$(document).ready(function () {
+		loadStatistics();
+	});
+</script>
+
+<style>
+	#snackbar {
+		visibility: hidden;
+		min-width: 250px;
+		margin-left: -125px;
+		color: #fff;
+		text-align: center;
+		border-radius: 2px;
+		padding: 16px;
+		position: fixed;
+		z-index: 1;
+		left: 50%;
+		bottom: 30px;
+		font-size: 17px;
+	}
+
+	#snackbar.show {
+		visibility: visible;
+		animation: fadein 0.5s, fadeout 0.5s 2.5s;
+	}
+
+	@keyframes fadein {
+		from {
+			bottom: 0;
+			opacity: 0;
+		}
+		to {
+			bottom: 30px;
+			opacity: 1;
+		}
+	}
+
+	@keyframes fadeout {
+		from {
+			bottom: 30px;
+			opacity: 1;
+		}
+		to {
+			bottom: 0;
+			opacity: 0;
+		}
+	}
+
+	.table-responsive {
+		margin-top: 20px;
+		max-height: 400px;
+		overflow-y: auto;
+		border: 1px solid #ddd;
+	}
+</style>
+{% endblock %}
