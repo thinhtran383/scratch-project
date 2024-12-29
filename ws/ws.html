@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+		<title>Private Chat</title>
+		<style>
+			.container {
+				max-width: 400px;
+				margin: auto;
+				font-family: Arial, sans-serif;
+			}
+			.chat-box,
+			.register {
+				display: none;
+			}
+			.chat-box.active,
+			.register.active {
+				display: block;
+			}
+			.chat-content {
+				border: 1px solid #ddd;
+				padding: 10px;
+				height: 300px;
+				overflow-y: auto;
+			}
+			.chat-messages {
+				list-style-type: none;
+				padding: 0;
+			}
+			.message {
+				margin: 5px 0;
+			}
+			.message.self {
+				text-align: right;
+			}
+			.avatar {
+				font-weight: bold;
+				margin-right: 5px;
+			}
+			.input-message,
+			.send-button,
+			#user-name,
+			#receiver-name {
+				padding: 5px;
+			}
+			.send-message {
+				display: flex;
+				gap: 5px;
+			}
+			.send-button {
+				cursor: pointer;
+			}
+		</style>
+	</head>
+	<body>
+		<div class="container">
+			<div class="register active">
+				<input id="user-name" type="text" placeholder="Enter your name" />
+				<button type="button" onclick="registerUser()">Connect</button>
+			</div>
+			<div class="chat-box">
+				<div class="chat-content">
+					<ul id="chat-messages" class="chat-messages"></ul>
+				</div>
+				<div class="send-message">
+					<input type="text" id="receiver-name" placeholder="Receiver's name" />
+					<input
+						type="text"
+						id="input-message"
+						class="input-message"
+						placeholder="Enter message"
+					/>
+					<button
+						type="button"
+						class="send-button"
+						onclick="sendPrivateMessage()"
+					>
+						Send
+					</button>
+				</div>
+			</div>
+		</div>
+
+		<script>
+			let stompClient = null;
+			let username = "";
+			let yourJwtToken =
+				"eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJwYXRpZW50MSIsInJvbGVzIjpbIlJPTEVfUEFUSUVOVCJdLCJleHAiOjE3MzM2MTk5MzAsInVzZXJJZCI6Mn0.NfzJfTaqASnVeO7yaNk3oKjkQ_6nEnvKZJcn1ZRN39I";
+
+			function connect() {
+				const socket = new WebSocket("ws://localhost:8080/ws");
+				stompClient = Stomp.over(socket);
+				stompClient.connect(
+					{ Authorization: "Bearer " + yourJwtToken },
+					onConnected,
+					onError
+				);
+			}
+
+			function onConnected() {
+				document.querySelector(".register").classList.remove("active");
+				document.querySelector(".chat-box").classList.add("active");
+				stompClient.subscribe(
+					"/user/" + username + "/root",
+					onPrivateMessageReceived
+				);
+
+				// userJoin();
+			}
+
+			// function userJoin() {
+			// 	const chatMessage = {
+			// 		senderName: username,
+			// 	};
+			// 	stompClient.send("/app/message", {}, JSON.stringify(chatMessage));
+			// }
+
+			function registerUser() {
+				username = document.getElementById("user-name").value;
+				if (username) {
+					connect();
+				}
+			}
+
+			function onPrivateMessageReceived(payload) {
+				const payloadData = JSON.parse(payload.body);
+				displayMessage(payloadData.senderName, payloadData.message);
+			}
+
+			function displayMessage(sender, message) {
+				const messageElement = document.createElement("li");
+				messageElement.classList.add("message");
+				if (sender === username) messageElement.classList.add("self");
+				messageElement.innerHTML = `<span class="avatar">${sender}</span>: ${message}`;
+				document.getElementById("chat-messages").appendChild(messageElement);
+			}
+
+			function sendPrivateMessage() {
+				const messageContent = document
+					.getElementById("input-message")
+					.value.trim();
+				const receiver = document.getElementById("receiver-name").value.trim();
+				if (messageContent && receiver && stompClient) {
+					const chatMessage = {
+						senderName: username,
+						receiverName: receiver,
+						message: messageContent,
+					};
+					stompClient.send(
+						"/app/private-message",
+						{ Authorization: "Bearer " + yourJwtToken },
+						JSON.stringify(chatMessage)
+					);
+					displayMessage(username, messageContent);
+					document.getElementById("input-message").value = "";
+				}
+			}
+
+			function onError(error) {
+				console.error(
+					"Could not connect to WebSocket server. Please refresh and try again.",
+					error
+				);
+			}
+		</script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/stomp.js/2.3.3/stomp.min.js"></script>
+	</body>
+</html>
