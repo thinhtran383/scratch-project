@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.scene.control.Button?>
+<?import javafx.scene.control.ComboBox?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.TableColumn?>
+<?import javafx.scene.control.TableView?>
+<?import javafx.scene.control.TextArea?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.Pane?>
+<?import javafx.scene.text.Font?>
+<?import javafx.scene.text.Text?>
+
+<AnchorPane maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" prefHeight="602.0" prefWidth="964.0" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.quanlykho.controller.MainViewController">
+    <children>
+        <Label layoutX="681.0" layoutY="41.0" text="Nhân viên:" />
+        <Label fx:id="lbStaffName" layoutX="746.0" layoutY="41.0" text="Võ Trọng Hiếu" textFill="RED" />
+        <TableView id="tableData" fx:id="tbProducts" layoutX="394.0" layoutY="76.0" onMouseClicked="#onSelected" prefHeight="445.0" prefWidth="543.0" tableMenuButtonVisible="true">
+            <columns>
+                <TableColumn fx:id="idColumn" prefWidth="40.0" text="ID" />
+                <TableColumn fx:id="nameColumn" prefWidth="113.0" text="Tên sản phẩm" />
+                <TableColumn fx:id="quantityColumn" prefWidth="59.11114501953125" text="SL" />
+                <TableColumn fx:id="priceColumn" prefWidth="145.7777099609375" text="Giá thành" />
+                <TableColumn fx:id="typeColumn" prefWidth="177.3333740234375" text="Phân loại" />
+            </columns>
+        </TableView>
+          <Label layoutX="154.0" layoutY="284.0" text="Nhập kho" textFill="RED">
+              <font>
+                  <Font size="15.0" />
+              </font>
+          </Label>
+          <TextField fx:id="txtNum" layoutX="286.0" layoutY="453.0" prefHeight="25.0" prefWidth="65.0" />
+          <TextField fx:id="txtName" layoutX="74.0" layoutY="369.0" prefHeight="25.0" prefWidth="277.0" />
+          <TextField fx:id="txtPrice" layoutX="243.0" layoutY="409.0" prefHeight="25.0" prefWidth="108.0" />
+          <Label layoutX="20.0" layoutY="373.0" text="Tên SP" />
+          <Label layoutX="233.0" layoutY="457.0" text="Số lượng" />
+          <Label layoutX="14.0" layoutY="457.0" text="Phân loại" />
+          <Label layoutX="187.0" layoutY="413.0" text="Giá thành" />
+          <Label layoutX="18.0" layoutY="489.0" text="Ghi chú" />
+          <Button layoutX="20.0" layoutY="319.0" mnemonicParsing="false" onAction="#onClickImport" prefHeight="25.0" prefWidth="108.0" text="Thêm vào kho" />
+          <Label layoutX="32.0" layoutY="413.0" text="Id" />
+          <TextField fx:id="txtId" layoutX="74.0" layoutY="409.0" prefHeight="25.0" prefWidth="108.0" />
+          <ComboBox fx:id="cbType" layoutX="74.0" layoutY="453.0" prefHeight="25.0" prefWidth="149.0" promptText="Chọn loại" />
+          <TextArea fx:id="txtNote" layoutX="74.0" layoutY="489.0" prefHeight="71.0" prefWidth="277.0" />
+          <Button layoutX="203.0" layoutY="319.0" mnemonicParsing="false" onAction="#onClickReset" prefHeight="25.0" prefWidth="59.0" text="Reset" />
+        <Pane layoutX="19.0" layoutY="76.0" prefHeight="211.0" prefWidth="353.0">
+            <children>
+                <Label layoutX="150.0" layoutY="4.0" text="Xuất kho" textFill="RED">
+                    <font>
+                        <Font size="15.0" />
+                    </font>
+                </Label>
+                <TextField fx:id="txtNumOut" layoutX="307.0" layoutY="144.0" onKeyTyped="#onTyped" prefHeight="25.0" prefWidth="40.0" />
+                <TextField fx:id="txtNameOut" layoutX="71.0" layoutY="110.0" prefHeight="25.0" prefWidth="277.0" />
+                <Label layoutX="15.0" layoutY="114.0" text="Tên SP" />
+                <Label layoutX="243.0" layoutY="148.0" text="Số lượng" />
+                <Button layoutX="66.0" layoutY="47.0" mnemonicParsing="false" onAction="#onClickExport" prefHeight="25.0" prefWidth="155.0" text="Xác nhận xuất kho" />
+                <Label layoutX="8.0" layoutY="148.0" text="Gía thành" />
+                <TextField fx:id="txtPriceOut" editable="false" layoutX="73.0" layoutY="144.0" prefHeight="25.0" prefWidth="163.0" promptText="0" />
+                <Label layoutX="5.0" layoutY="177.0" text="Tổng cộng" />
+                <Text fx:id="lbTotal" layoutX="71.0" layoutY="190.0" strokeType="OUTSIDE" strokeWidth="0.0" text="0" wrappingWidth="277.0" />
+            <Label layoutX="11.0" layoutY="81.0" text="Id" />
+            <TextField fx:id="txtIdExport" layoutX="69.0" layoutY="77.0" prefHeight="25.0" prefWidth="277.0" />
+            </children>
+        </Pane>
+        <Button layoutX="861.0" layoutY="37.0" mnemonicParsing="false" onAction="#onClickLogout" text="Đăng xuất" />
+        <Label layoutX="33.0" layoutY="46.0" text="ỨNG DỤNG QUẢN LÍ KHO HÀNG" textFill="RED">
+            <font>
+                <Font size="22.0" />
+            </font>
+        </Label>
+      <MenuBar layoutX="-4.0" layoutY="1.0" prefHeight="25.0" prefWidth="964.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="DANH MỤC">
+            <items>
+              <MenuItem mnemonicParsing="false" onAction="#onClickShowImport" text="Phiếu nhập kho" />
+                  <MenuItem mnemonicParsing="false" onAction="#onClickShowExport" text="Phiếu xuất kho" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+      <Button layoutX="273.0" layoutY="319.0" mnemonicParsing="false" onAction="#onClickUpdate" prefHeight="25.0" prefWidth="77.0" text="Lưu" />
+      <Button layoutX="135.0" layoutY="319.0" mnemonicParsing="false" onAction="#onClickDelete" prefHeight="25.0" prefWidth="51.0" text="Xoá" />
+    </children>
+</AnchorPane>
