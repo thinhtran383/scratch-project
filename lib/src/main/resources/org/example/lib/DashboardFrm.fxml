@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import java.net.URL?>
+<?import javafx.scene.control.ListView?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.layout.AnchorPane?>
+
+<AnchorPane prefHeight="636.0" prefWidth="1140.0" xmlns="http://javafx.com/javafx/21" xmlns:fx="http://javafx.com/fxml/1" fx:controller="org.example.lib.controllers.DashboardController">
+   <children>
+      <ListView fx:id="lstMenu" layoutY="59.0" prefHeight="577.0" prefWidth="231.0" stylesheets="@listView.css" />
+      <AnchorPane fx:id="pane" layoutX="240.0" layoutY="28.0" prefHeight="627.0" prefWidth="909.0" />
+      <MenuBar layoutY="28.0" prefHeight="27.0" prefWidth="231.0">
+        <menus>
+          <Menu mnemonicParsing="false" text="Hệ thống">
+            <items>
+              <MenuItem fx:id="changPassword" mnemonicParsing="false" onAction="#onClickChangePassword" text="Đổi mật khẩu" />
+                  <MenuItem fx:id="logout" mnemonicParsing="false" onAction="#onClickLogout" text="Đăng xuất" />
+            </items>
+          </Menu>
+        </menus>
+      </MenuBar>
+   </children>
+   <stylesheets>
+      <URL value="@Style.css" />
+      <URL value="@Metro-UI.css" />
+   </stylesheets>
+</AnchorPane>
